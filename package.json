@@ -1,8 +1,9 @@
 {
   "name": "arepository",
   "version": "1.0.0",
-  "description": "TS/JS nodejs DAO base / abstract layer for repository",
-  "main": "dist/index.js",
+  "description": "TS/JS Nodejs DAO base/abstract layer for repository",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,5 +15,13 @@
     "data"
   ],
   "author": "Alexandr Shevchenko",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "pg": "^8.11.3",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@types/pg": "^8.11.0"
+  }
 }
