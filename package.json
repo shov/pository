@@ -1,0 +1,18 @@
+{
+  "name": "arepository",
+  "version": "1.0.0",
+  "description": "TS/JS nodejs DAO base / abstract layer for repository",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "dao",
+    "db",
+    "repo",
+    "repository",
+    "data"
+  ],
+  "author": "Alexandr Shevchenko",
+  "license": "ISC"
+}
