@@ -13,10 +13,15 @@ export type TTransactionOptions<TTransaction = any> = {
   onRollbackCb: (transaction: TTransaction) => any,
 }
 
-export abstract class ARepository<TTransaction extends TQueryFacade = any, TSession extends TQueryFacade = any, TQueryFacade = any> {
-  protected static transactionErrorPayloadMap = new WeakMap<Error, { rollbackCbList: ((...args: any[]) => any)[] }>();
+export type TCloseOptions = {
+  isTransaction: boolean,
+}
 
-  public abstract get newSession(): TSession;
+export abstract class ARepository<TTransaction extends TQueryFacade = any, TSession extends TQueryFacade = any, TQueryFacade = any> {
+  protected static transactionErrorPayloadMap
+    = new WeakMap<Error, { rollbackCbList: ((...args: any[]) => any)[] }>();
+
+  public abstract startNewSession(): TSession | Promise<TSession>;
 
   public abstract get currentSession(): TSession | undefined;
 
@@ -28,7 +33,7 @@ export abstract class ARepository<TTransaction extends TQueryFacade = any, TSess
 
   protected abstract isTransaction(facade: TQueryFacade): boolean;
 
-  protected abstract close(facade: TQueryFacade): Promise<void>;
+  protected abstract close(facade: TQueryFacade, options?: TCloseOptions): Promise<void>;
 
   protected abstract beginTransaction(session: TSession): TTransaction | Promise<TTransaction>;
 
@@ -51,7 +56,10 @@ export abstract class ARepository<TTransaction extends TQueryFacade = any, TSess
       } catch (e) {
         // Pass it up to the root transaction to be executed there
         if ('function' === typeof options?.onRollbackCb) {
-          const payload = ARepository.transactionErrorPayloadMap.get(e) ?? {rollbackCbList: []};
+          const payload
+            = ARepository.transactionErrorPayloadMap.get(e)
+            ?? {rollbackCbList: []};
+
           payload.rollbackCbList.push(options.onRollbackCb);
           ARepository.transactionErrorPayloadMap.set(e, payload);
         }
@@ -60,7 +68,7 @@ export abstract class ARepository<TTransaction extends TQueryFacade = any, TSess
     }
 
     // Regular case
-    const session = this.currentSession || this.newSession;
+    const session = this.currentSession || await Promise.resolve(this.startNewSession());
     const hasToBeClosed = !this.currentSession;
     let tx: TTransaction;
     try {
@@ -73,13 +81,19 @@ export abstract class ARepository<TTransaction extends TQueryFacade = any, TSess
 
       // Add to the rest of rollback callbacks
       if ('function' === typeof options?.onRollbackCb) {
-        const payload = ARepository.transactionErrorPayloadMap.get(e) ?? {rollbackCbList: []};
+        const payload =
+          ARepository.transactionErrorPayloadMap.get(e)
+          ?? {rollbackCbList: []};
         payload.rollbackCbList.push(options.onRollbackCb);
+
         ARepository.transactionErrorPayloadMap.set(e, payload);
       }
 
       // Execute rollback callbacks
-      const payload = ARepository.transactionErrorPayloadMap.get(e) ?? {rollbackCbList: []};
+      const payload =
+        ARepository.transactionErrorPayloadMap.get(e)
+        ?? {rollbackCbList: []};
+
       await Promise.allSettled(
         payload.rollbackCbList.map(async cb => Promise.resolve(cb(tx)))
       );
@@ -88,7 +102,7 @@ export abstract class ARepository<TTransaction extends TQueryFacade = any, TSess
     } finally {
       await this.close(tx);
       if (hasToBeClosed) {
-        await this.close(session);
+        await this.close(session, {isTransaction: true});
       }
     }
   }
@@ -146,7 +160,11 @@ export abstract class ARepository<TTransaction extends TQueryFacade = any, TSess
   protected async db<R = any>(
     cb: (facade: TQueryFacade) => Promise<R>,
   ): Promise<R> {
-    const facade = this.currentSession || this.currentTransaction || this.newSession;
+    const facade =
+      this.currentSession
+      || this.currentTransaction
+      || await Promise.resolve(this.startNewSession());
+
     try {
       return await cb(facade);
     } catch (e) {
