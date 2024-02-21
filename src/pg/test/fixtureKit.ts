@@ -1,15 +1,23 @@
-import {Client} from 'pg';
+import {Client, Pool, PoolClient} from 'pg';
 import {BasePostgresRepository} from '../BasePostgresRepository'
 import {TNullable} from '../../types'
+
+const DB_CRED = {
+  USER: 'default',
+  HOST: 'localhost',
+  DATABASE: 'default',
+  PASSWORD: 'secret',
+  PORT: 5432,
+};
 
 export async function connectPgClient(): Promise<Client> {
   return new Promise<Client>((resolve, reject) => {
     const client = new Client({
-      user: 'default',
-      host: 'localhost',
-      database: 'default',
-      password: 'secret',
-      port: 5432,
+      user: DB_CRED.USER,
+      host: DB_CRED.HOST,
+      database: DB_CRED.DATABASE,
+      password: DB_CRED.PASSWORD,
+      port: DB_CRED.PORT,
     });
     client.connect((err) => {
       if (err) {
@@ -18,6 +26,16 @@ export async function connectPgClient(): Promise<Client> {
         resolve(client);
       }
     });
+  });
+}
+
+export function createPgPool(): Pool {
+  return new Pool({
+    user: DB_CRED.USER,
+    host: DB_CRED.HOST,
+    database: DB_CRED.DATABASE,
+    password: DB_CRED.PASSWORD,
+    port: DB_CRED.PORT,
   });
 }
 

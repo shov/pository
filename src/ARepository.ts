@@ -170,9 +170,7 @@ export abstract class ARepository<TTransaction extends TQueryFacade = any, TSess
     } catch (e) {
       throw e;
     } finally {
-      if (this.toCloseDefault) {
-        await this.close(facade);
-      }
+      await this.close(facade);
     }
   }
 }

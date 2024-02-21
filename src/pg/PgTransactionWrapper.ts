@@ -55,8 +55,3 @@ export class PgTransactionWrapper {
   }
 }
 
-Object.defineProperty(PgTransactionWrapper, Symbol.hasInstance, {
-  value: function (instance: any) {
-    return instance instanceof PgTransactionWrapper || instance['_client'] instanceof ClientBase;
-  }
-});

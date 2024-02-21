@@ -14,7 +14,7 @@ export class BasePostgresRepository extends ARepository<PgTransactionWrapper, Cl
   }
 
   /**
-   * Never close the connection by default if it's not a transaction
+   * Never close the Client connection, release pool one though
    */
   protected toCloseDefault: boolean = false;
 
@@ -34,7 +34,7 @@ export class BasePostgresRepository extends ARepository<PgTransactionWrapper, Cl
    * Get current connection, might be useful for manual control
    * the proxy wrapper made by for() method will set that
    */
-  get currentSession(): ClientBase | undefined {
+  public get currentSession(): ClientBase | undefined {
     return void 0;
   }
 
@@ -42,7 +42,7 @@ export class BasePostgresRepository extends ARepository<PgTransactionWrapper, Cl
    * Get current transaction, might be useful for manual control
    * the proxy wrapper made by for() method will set that
    */
-  get currentTransaction(): PgTransactionWrapper | undefined {
+  public get currentTransaction(): PgTransactionWrapper | undefined {
     return void 0;
   }
 
@@ -66,7 +66,7 @@ export class BasePostgresRepository extends ARepository<PgTransactionWrapper, Cl
     }
 
     // Client, close it if it's not a transaction. Never happens if toCloseDefault is false
-    if(facade instanceof Client && options?.isTransaction !== true) {
+    if(facade instanceof Client && this.toCloseDefault && options?.isTransaction !== true) {
       return await facade.end();
     }
   }
