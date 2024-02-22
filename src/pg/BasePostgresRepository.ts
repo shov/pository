@@ -1,6 +1,6 @@
-import {ARepository, TCloseOptions} from '../ARepository';
-import {ClientBase, Client, PoolClient, Pool} from 'pg';
-import {PgTransactionWrapper} from './PgTransactionWrapper';
+import { ARepository, TCloseOptions } from '../ARepository';
+import { ClientBase, Client, PoolClient, Pool } from 'pg';
+import { PgTransactionWrapper } from './PgTransactionWrapper';
 
 /**
  * Postgres base repository implementation,
@@ -8,66 +8,61 @@ import {PgTransactionWrapper} from './PgTransactionWrapper';
  */
 export class BasePostgresRepository extends ARepository<PgTransactionWrapper, ClientBase, ClientBase> {
   constructor(
-    protected pgConnector: Pool | Client
+    protected pgConnector: Pool | Client,
   ) {
-    super()
+    super();
   }
-
-  /**
-   * Never close the Client connection, release pool one though
-   */
-  protected toCloseDefault: boolean = false;
 
   /**
    * In case of using pool, it will return a new client from the pool
    * the same client otherwise
    */
   public async startNewSession(): Promise<ClientBase> {
-    if(this.pgConnector instanceof Pool) {
+    if (this.pgConnector instanceof Pool) {
       return await this.pgConnector.connect();
     }
 
     return this.pgConnector;
   }
 
-  /**
-   * Get current connection, might be useful for manual control
-   * the proxy wrapper made by for() method will set that
-   */
+  protected _currentSession: ClientBase | undefined;
+
   public get currentSession(): ClientBase | undefined {
-    return void 0;
+    return this._currentSession;
   }
 
-  /**
-   * Get current transaction, might be useful for manual control
-   * the proxy wrapper made by for() method will set that
-   */
   public get currentTransaction(): PgTransactionWrapper | undefined {
     return void 0;
   }
 
+  protected set currentSession(session: ClientBase | undefined) {
+    this._currentSession = session;
+  }
+
   protected isSession(facade: ClientBase): boolean {
-    return (facade instanceof Client || facade instanceof PgTransactionWrapper)
+    return (facade instanceof Client || !(facade instanceof PgTransactionWrapper));
   }
 
   protected isTransaction(facade: ClientBase): boolean {
-    return facade instanceof PgTransactionWrapper
+    return facade instanceof PgTransactionWrapper;
   }
 
   protected async close(facade: ClientBase, options?: TCloseOptions): Promise<void> {
     // No need to close the transaction
-    if(facade instanceof PgTransactionWrapper) {
+    if (facade instanceof PgTransactionWrapper) {
       return;
     }
 
-    // Pool, still release if session has been taken from the pool for a transaction
-    if('function' === typeof (facade as PoolClient).release) {
-      return (facade as PoolClient).release();
+    // Pool, release
+    if ('function' === typeof (facade as PoolClient).release) {
+      (facade as PoolClient).release();
+      this.currentSession = void 0;
     }
 
     // Client, close it if it's not a transaction. Never happens if toCloseDefault is false
-    if(facade instanceof Client && this.toCloseDefault && options?.isTransaction !== true) {
-      return await facade.end();
+    if (facade instanceof Client && options?.force === true) {
+      await facade.end();
+      this.currentSession = void 0;
     }
   }
 
@@ -81,7 +76,7 @@ export class BasePostgresRepository extends ARepository<PgTransactionWrapper, Cl
     return transaction.commit();
   }
 
-  protected rollbackTransaction(transaction: any): Promise<void> {
-    return Promise.resolve(undefined)
+  protected rollbackTransaction(transaction: PgTransactionWrapper): Promise<void> {
+    return transaction.rollback();
   }
 }

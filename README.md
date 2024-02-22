@@ -51,12 +51,13 @@ title: for(newSession)
 ---
 flowchart TD
 	1[repo object bound to passed session]
-	2["after db() call the session will be close by toCloseDefault"]
-	3["to close it use native driver methods on session object"]
+	2["session never close, but PG Pool release"]
+	3["to close it use native driver methods on session object or finalize()"]
 	1 --> 2 -.-> 3
 	
 ```
 
+TODO rewrite for transactions
 ```mermaid
 ---
 title: for(transaction)
@@ -67,12 +68,12 @@ flowchart TD
 	a121["default session created and set"]
 	a2[after db call it never releases the session]
 	a3[after transaction close session never close, but PG Pool release]
-	a11 --> a2 --> a3
-	a12 --> a121 --> a2
 	b1["repo object had been bound to session by for()"]
 	b2["repo object bound to transaction by for()"]
 	b3["after db() call it never releases the session"]
 	b4[after transaction close session will be close by toCloseDefault]
+	a11 --> a2 --> a3
+	a12 --> a121 --> a2
 	b1 --> b2 --> b3 --> b4
 ```
 
