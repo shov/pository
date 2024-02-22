@@ -1,6 +1,6 @@
 {
   "name": "pository",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "TS/JS Nodejs DAO base/abstract layer for repository",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
