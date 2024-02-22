@@ -1,5 +1,5 @@
 {
-  "name": "arepository",
+  "name": "pository",
   "version": "1.0.0",
   "description": "TS/JS Nodejs DAO base/abstract layer for repository",
   "main": "./dist/index.js",
@@ -17,7 +17,7 @@
     "data"
   ],
   "author": "Alexandr Shevchenko",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/node": "^20.11.19",

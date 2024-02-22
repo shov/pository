@@ -101,7 +101,7 @@ export abstract class ARepository<TTransaction extends TQueryFacade = any, TSess
       throw e;
     } finally {
       await this.close(tx);
-      if (hasToBeClosed) {
+      if (hasToBeClosed) { // TODO describe all options wit session
         await this.close(session, {isTransaction: true});
       }
     }
